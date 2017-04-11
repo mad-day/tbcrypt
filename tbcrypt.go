@@ -49,6 +49,12 @@ import "math/big"
 import "io"
 import "errors"
 
+/*
+Signs a public key. This step is done by the Time-Authority. Note that the Signature
+can still be used after the Time-Ticked has expired. The signature should be
+communicated using a secure channel only (such as the Noise protocol), to avoid
+anyone capturing the signature for later decryption of messages.
+*/
 func TA_Sign(r io.Reader, pub *bn256.G2, taPriv *big.Int) (S1 *bn256.G2,S2 []byte,E error) {
 	o,O,e := bn256.RandomG2(r)
 	if e!=nil { return nil,nil,e }
@@ -60,6 +66,9 @@ func TA_Sign(r io.Reader, pub *bn256.G2, taPriv *big.Int) (S1 *bn256.G2,S2 []byt
 	return O,sdck,nil
 }
 
+/*
+"Encrypts" a shared secret using a public key (pub) and a Time-Ticket (taPub).
+*/
 func Bob_Encrypt(r io.Reader, pub *bn256.G2, taPub *bn256.G1) (SharedSecret *bn256.GT, B *bn256.G1,E error) {
 	b,B,e := bn256.RandomG1(r)
 	if e!=nil { return nil,nil,e }
@@ -67,6 +76,9 @@ func Bob_Encrypt(r io.Reader, pub *bn256.G2, taPub *bn256.G1) (SharedSecret *bn2
 	return new(bn256.GT).ScalarMult(ptp,b), B, nil
 }
 
+/*
+"Decrypts" a shared secret using a signature and the private key.
+*/
 func Alice_Decrypt(S1 *bn256.G2,S2 []byte,priv *big.Int, B *bn256.G1) (SharedSecret *bn256.GT, E error) {
 	k := new(bn256.G2).ScalarMult(S1,priv).Marshal()
 	otp := make([]byte,len(S2))
